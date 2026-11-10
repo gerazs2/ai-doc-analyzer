@@ -1,4 +1,4 @@
-package com.jgmagalop.ai_doc_analizer;
+package com.jgmagalop.aidocanalyzer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
