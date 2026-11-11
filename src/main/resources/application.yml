@@ -37,7 +37,7 @@ spring:
 
     vectorstore:
       pgvector:
-        initialize-schema: true   # temporal: en T12 lo pasamos a Flyway
+        initialize-schema: false   # temporal: en T12 lo pasamos a Flyway
         dimensions: 768
         index-type: HNSW
         distance-type: COSINE_DISTANCE
