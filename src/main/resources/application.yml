@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: ai-doc-analyzer
+
+  # Lee el .env de la raíz del proyecto (si no existe, no falla)
+  config:
+    import: optional:file:.env[.properties]
+
+  # ---------- Base de datos (Docker, puerto 5433) ----------
+  datasource:
+    url: jdbc:postgresql://localhost:5433/aidoc
+    username: aidoc
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate      # Flyway crea las tablas; Hibernate solo verifica
+    open-in-view: false
+
+  # ---------- IA ----------
+  ai:
+    model:
+      chat: openai            # el chat lo hace Groq (API compatible con OpenAI)
+      embedding: ollama       # los embeddings se hacen en local
+
+    openai:                   # configuración de Groq
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai/v1
+      chat:
+        model: qwen/qwen3.8-27b
+        temperature: 0.2
+
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        model: nomic-embed-text
+
+    vectorstore:
+      pgvector:
+        initialize-schema: true   # temporal: en T12 lo pasamos a Flyway
+        dimensions: 768
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+
+# ---------- Configuración propia de la aplicación ----------
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-minutes: 60
