@@ -2,6 +2,7 @@ package com.jgmagalop.aidocanalyzer.shared.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,6 +37,14 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason());
     }
 
+    // 400 - Archivo vacío o de un tipo no permitido
+    @ExceptionHandler(InvalidFileException.class)
+    public ProblemDetail handleInvalidFile(InvalidFileException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Archivo inválido");
+        return problem;
+    }
+
     // 404 - No existe
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
@@ -58,6 +67,15 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción");
         problem.setTitle("Acceso denegado");
+        return problem;
+    }
+
+    // 413 - El archivo supera el tamaño máximo permitido
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONTENT_TOO_LARGE, "El archivo supera el tamaño máximo de 20 MB");
+        problem.setTitle("Archivo demasiado grande");
         return problem;
     }
 
