@@ -1,8 +1,14 @@
 package com.jgmagalop.aidocanalyzer.documents.api;
 
+import com.jgmagalop.aidocanalyzer.documents.domain.DocumentCategory;
+import com.jgmagalop.aidocanalyzer.documents.domain.DocumentStatus;
 import com.jgmagalop.aidocanalyzer.documents.service.DocumentService;
 import com.jgmagalop.aidocanalyzer.security.AuthenticatedUser;
+import com.jgmagalop.aidocanalyzer.shared.api.PageResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,5 +35,21 @@ public class DocumentController {
 
         DocumentResponse response = documentService.register(file, request, user.id());
         return ResponseEntity.accepted().body(response);
+    }
+
+    @GetMapping
+    public PageResponse<DocumentResponse> list(
+            @RequestParam(required = false) DocumentCategory category,
+            @RequestParam(required = false) DocumentStatus status,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+
+        return documentService.page(category, status, user, pageable);
+    }
+
+    @GetMapping("/{id}")
+    public DocumentResponse getById(@PathVariable Long id,
+                                    @AuthenticationPrincipal AuthenticatedUser user) {
+        return documentService.getById(id, user);
     }
 }

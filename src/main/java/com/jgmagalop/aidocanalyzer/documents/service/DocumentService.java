@@ -2,16 +2,20 @@ package com.jgmagalop.aidocanalyzer.documents.service;
 
 import com.jgmagalop.aidocanalyzer.documents.api.DocumentResponse;
 import com.jgmagalop.aidocanalyzer.documents.api.DocumentUploadRequest;
-import com.jgmagalop.aidocanalyzer.documents.domain.Document;
-import com.jgmagalop.aidocanalyzer.documents.domain.DocumentType;
-import com.jgmagalop.aidocanalyzer.documents.domain.DocumentUploadedEvent;
+import com.jgmagalop.aidocanalyzer.documents.domain.*;
 import com.jgmagalop.aidocanalyzer.documents.repository.DocumentRepository;
 import com.jgmagalop.aidocanalyzer.documents.storage.FileStorageService;
+import com.jgmagalop.aidocanalyzer.security.AuthenticatedUser;
+import com.jgmagalop.aidocanalyzer.security.user.Role;
+import com.jgmagalop.aidocanalyzer.shared.api.PageResponse;
 import com.jgmagalop.aidocanalyzer.shared.exception.DuplicateResourceException;
 import com.jgmagalop.aidocanalyzer.shared.exception.InvalidFileException;
+import com.jgmagalop.aidocanalyzer.shared.exception.ResourceNotFoundException;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -124,5 +128,32 @@ public class DocumentService {
     private String originalFilename(MultipartFile file) {
         String name = StringUtils.cleanPath(String.valueOf(file.getOriginalFilename()));
         return name.length() > 255 ? name.substring(0, 255) : name;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<DocumentResponse> page(DocumentCategory category,
+                                                DocumentStatus status,
+                                                AuthenticatedUser user,
+                                                Pageable pageable) {
+        boolean allDepartments = user.role() == Role.ADMIN;
+        Page<Document> documents = documentRepository.search(
+                category, status, user.department(), allDepartments, pageable);
+
+        return  PageResponse.from(documents.map(DocumentResponse::from));
+
+    }
+
+    @Transactional(readOnly = true)
+    public DocumentResponse getById(Long id, AuthenticatedUser user) {
+        return documentRepository.findById(id)
+                .filter(document -> canView(document, user))
+                .map(DocumentResponse::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+    }
+
+    private boolean canView(Document document, AuthenticatedUser user) {
+        return user.role() == Role.ADMIN
+                || document.getDepartment() == null
+                || document.getDepartment() == user.department();
     }
 }

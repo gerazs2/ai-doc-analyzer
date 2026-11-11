@@ -6,6 +6,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
+  # ---------- Carga de archivos ----------
   servlet:
     multipart:
       max-file-size: 20MB
@@ -21,6 +22,12 @@ spring:
     hibernate:
       ddl-auto: validate      # Flyway crea las tablas; Hibernate solo verifica
     open-in-view: false
+
+  # ---------- Paginación ----------
+  data:
+    web:
+      pageable:
+        max-page-size: 100    # nadie puede pedir más de 100 por página
 
   # ---------- IA ----------
   ai:
@@ -42,7 +49,7 @@ spring:
 
     vectorstore:
       pgvector:
-        initialize-schema: false   # temporal: en T12 lo pasamos a Flyway
+        initialize-schema: false   # vector_store la crea Flyway (V4)
         dimensions: 768
         index-type: HNSW
         distance-type: COSINE_DISTANCE
