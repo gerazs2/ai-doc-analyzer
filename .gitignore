@@ -39,4 +39,4 @@ application-local.yml
 application-local.properties
 
 ### Archivos subidos al sistema ###
-storage/
+/storage/

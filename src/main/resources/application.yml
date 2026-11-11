@@ -6,6 +6,11 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 21MB
+
   # ---------- Base de datos (Docker, puerto 5433) ----------
   datasource:
     url: jdbc:postgresql://localhost:5433/aidoc
@@ -47,3 +52,5 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: 60
+  storage:
+    location: ./storage
