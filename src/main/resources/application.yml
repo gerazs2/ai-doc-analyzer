@@ -63,3 +63,9 @@ app:
     location: ./storage
   ingestion:
     chunk-size: 500
+  search:
+    top-k: 5
+    similarity-threshold: 0.0
+  embedding:
+    document-prefix: "search_document: "
+    query-prefix: "search_query: "

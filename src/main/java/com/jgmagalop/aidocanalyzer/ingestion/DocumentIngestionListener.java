@@ -5,6 +5,7 @@ import com.jgmagalop.aidocanalyzer.documents.domain.DocumentUploadedEvent;
 import com.jgmagalop.aidocanalyzer.documents.service.DocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -20,15 +21,19 @@ public class DocumentIngestionListener {
     private final DocumentTextExtractor textExtractor;
     private final TextChunker textChunker;
     private final VectorStore vectorStore;
+    private final String documentPrefix;
 
     public DocumentIngestionListener(DocumentService documentService,
                                      DocumentTextExtractor textExtractor,
                                      TextChunker textChunker,
-                                     VectorStore vectorStore) {
+                                     VectorStore vectorStore,
+                                     @Value("${app.embedding.document-prefix}") String documentPrefix
+                                     ) {
         this.documentService = documentService;
         this.textExtractor = textExtractor;
         this.textChunker = textChunker;
         this.vectorStore = vectorStore;
+        this.documentPrefix = documentPrefix;
     }
 
     @Async
@@ -57,7 +62,11 @@ public class DocumentIngestionListener {
             addMetadata(chunks, document);
 
             // Paso 5: generar embeddings y guardar en vector_store
-            vectorStore.add(chunks);
+            List<org.springframework.ai.document.Document> toStore = chunks.stream()
+                    .map(chunk -> new org.springframework.ai.document.Document(
+                            documentPrefix + chunk.getText(), chunk.getMetadata()
+                    )).toList();
+            vectorStore.add(toStore);
 
             documentService.completeProcessing(documentId, chunks.size());
             log.info("Documento {} ({}) indexado: {} fragmento(s)",
