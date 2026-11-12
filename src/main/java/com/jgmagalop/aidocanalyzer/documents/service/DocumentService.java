@@ -1,5 +1,6 @@
 package com.jgmagalop.aidocanalyzer.documents.service;
 
+import com.jgmagalop.aidocanalyzer.documents.api.DocumentForIngestion;
 import com.jgmagalop.aidocanalyzer.documents.api.DocumentResponse;
 import com.jgmagalop.aidocanalyzer.documents.api.DocumentUploadRequest;
 import com.jgmagalop.aidocanalyzer.documents.domain.*;
@@ -8,6 +9,7 @@ import com.jgmagalop.aidocanalyzer.documents.storage.FileStorageService;
 import com.jgmagalop.aidocanalyzer.security.AuthenticatedUser;
 import com.jgmagalop.aidocanalyzer.security.user.Role;
 import com.jgmagalop.aidocanalyzer.shared.api.PageResponse;
+import com.jgmagalop.aidocanalyzer.shared.exception.ConflictException;
 import com.jgmagalop.aidocanalyzer.shared.exception.DuplicateResourceException;
 import com.jgmagalop.aidocanalyzer.shared.exception.InvalidFileException;
 import com.jgmagalop.aidocanalyzer.shared.exception.ResourceNotFoundException;
@@ -155,5 +157,49 @@ public class DocumentService {
         return user.role() == Role.ADMIN
                 || document.getDepartment() == null
                 || document.getDepartment() == user.department();
+    }
+
+    /** Marca el documento como PROCESSING y devuelve lo necesario para procesarlo. */
+    @Transactional
+    public DocumentForIngestion startProcessing(Long documentId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado: " + documentId));
+
+        document.markProcessing();
+
+        return new DocumentForIngestion(
+                document.getId(),
+                document.getTitle(),
+                document.getDocumentType(),
+                document.getCategory(),
+                document.getDepartment(),
+                fileStorageService.load(document.getStoragePath()));
+    }
+    /** Marca el documento como INDEXED con el número de fragmentos generados. */
+    @Transactional
+    public void completeProcessing(Long documentId, int chunkCount) {
+        findOrThrow(documentId).markIndexed(chunkCount);
+    }
+
+    /** Marca el documento como FAILED con el motivo. */
+    @Transactional
+    public void failProcessing(Long documentId, String errorMessage) {
+        findOrThrow(documentId).markFailed(errorMessage);
+    }
+
+    private Document findOrThrow(Long documentId) {
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado: " + documentId));
+    }
+
+    @Transactional
+    public void delete(Long documentId) {
+        Document document = findOrThrow(documentId);
+
+        if(document.getStatus() == DocumentStatus.PROCESSING) {
+            throw new ConflictException("Documento se encuentra en proceso no se puede eliminar");
+        }
+        eventPublisher.publishEvent(new DocumentDeletedEvent(document.getId(),document.getStoragePath()));
+        documentRepository.delete(document);
     }
 }

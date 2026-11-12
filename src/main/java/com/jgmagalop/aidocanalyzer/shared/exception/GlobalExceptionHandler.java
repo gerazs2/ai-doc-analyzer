@@ -70,6 +70,15 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    // 409 la operacion choca con el estado actual del recurso
+    @ExceptionHandler(ConflictException.class)
+    public ProblemDetail handleConflict(ConflictException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+                problem.setTitle("Conflicto");
+        return problem;
+    }
+
     // 413 - El archivo supera el tamaño máximo permitido
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {

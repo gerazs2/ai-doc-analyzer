@@ -61,3 +61,5 @@ app:
     expiration-minutes: 60
   storage:
     location: ./storage
+  ingestion:
+    chunk-size: 500

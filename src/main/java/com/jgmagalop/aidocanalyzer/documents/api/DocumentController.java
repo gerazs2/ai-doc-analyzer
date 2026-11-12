@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.service.annotation.DeleteExchange;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -52,4 +53,12 @@ public class DocumentController {
                                     @AuthenticationPrincipal AuthenticatedUser user) {
         return documentService.getById(id, user);
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        documentService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
